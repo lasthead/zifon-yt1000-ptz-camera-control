@@ -145,6 +145,18 @@ void loop()
       ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::UP);
     } else if (PS4.Down()) {
       ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::DOWN);
+    } else if (PS4.UpLeft()) {
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::LEFT);
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::UP);
+    } else if (PS4.UpRight()) {
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::RIGHT);
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::UP);
+    } else if (PS4.DownLeft()) {
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::LEFT);
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::DOWN);
+    } else if (PS4.DownRight()) {
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::RIGHT);
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::DOWN);
     } else {
       ArduinoMTI::processAxis(PS4.LStickX(), PS4.LStickY());
     }
