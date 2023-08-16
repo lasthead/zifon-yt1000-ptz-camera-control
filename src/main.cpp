@@ -141,6 +141,12 @@ void loop()
       ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::RIGHT);
     } else if (PS4.Left()) {
       ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::LEFT);
+    } else if (PS4.Up()) {
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::UP);
+    } else if (PS4.Down()) {
+      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::DOWN);
+    } else {
+      ArduinoMTI::processAxis(PS4.LStickX(), PS4.LStickY());
     }
 
     if (PS4.Circle()) {
@@ -155,14 +161,10 @@ void loop()
       lancCommand(FOCUS_AUTO);
     }
 
-    ArduinoMTI::processAxis(PS4.LStickX(), PS4.LStickY());
-
     if (PS4.RStickY() > 30) {
-      Serial.printf("Right Stick y at %d\n", PS4.RStickX());
       lancCommand(ZOOM_IN_7);
     }
     if (PS4.RStickY() < -30) {
-      Serial.printf("Right Stick y at %d\n", PS4.RStickX());
       lancCommand(ZOOM_OUT_7);
     }
   }

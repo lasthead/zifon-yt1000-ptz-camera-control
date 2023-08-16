@@ -28,24 +28,39 @@ namespace ArduinoMTI {
     }
     
     void processButton(uint8_t direction) {
+        tiltStop = !digitalRead(titlStopSignal);
+        
         switch (direction) {
             case DIRECTIONS::UP:
-                ledcWrite(MOTOR_2_1_CHANNEL, panTiltSpeedMax);
-                break;
-            case DIRECTIONS::RIGHT:
-                ledcWrite(MOTOR_1_1_CHANNEL, panTiltSpeedMax);
+                if (tiltStop && lastTiltDirection != 1 ) {
+                    ledcWrite(MOTOR_2_2_CHANNEL, panSpeedMin);
+                    lastTiltDirection = 2;
+                } else if (!tiltStop) {
+                    ledcWrite(MOTOR_2_2_CHANNEL, panSpeedMin);
+                    lastTiltDirection = 1;
+                } else {
+                    ledcWrite(MOTOR_2_2_CHANNEL, 0);
+                    lastTiltDirection = 1;
+                }
                 break;
             case DIRECTIONS::DOWN:
-                ledcWrite(MOTOR_2_2_CHANNEL, panTiltSpeedMax);
+                if (tiltStop && lastTiltDirection != 2 ) {
+                    ledcWrite(MOTOR_2_1_CHANNEL, panSpeedMin);
+                    lastTiltDirection = 1;
+                } else if (!tiltStop) {
+                    ledcWrite(MOTOR_2_1_CHANNEL, panSpeedMin);
+                    lastTiltDirection = 2;
+                } else {
+                    ledcWrite(MOTOR_2_1_CHANNEL, 0);
+                    lastTiltDirection = 2;
+                }
+                break;
+            case DIRECTIONS::RIGHT:
+                ledcWrite(MOTOR_1_1_CHANNEL, panSpeedMin);
                 break;
             case DIRECTIONS::LEFT:
-                ledcWrite(MOTOR_1_2_CHANNEL, panTiltSpeedMax);
+                ledcWrite(MOTOR_1_2_CHANNEL, panSpeedMin);
                 break;
-            default:
-                ledcWrite(MOTOR_2_1_CHANNEL, 0);
-                ledcWrite(MOTOR_2_2_CHANNEL, 0);
-                ledcWrite(MOTOR_1_1_CHANNEL, 0);
-                ledcWrite(MOTOR_1_2_CHANNEL, 0);
         }
     }
 
