@@ -3,6 +3,8 @@
 #include <PS4Controller.h>
 // Ps3.begin("A0:AB:51:5D:E9:1B");
 #include "arduino-mti/handler.h"
+#include "esp_bt_main.h"
+#include "esp_bt_device.h"
 
 int player = 0;
 
@@ -11,23 +13,32 @@ int player = 0;
 
 int ledStatus = 4;
 
-boolean ZOOM_IN_2[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, LOW, LOW};   // 28 04
-boolean ZOOM_IN_3[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, HIGH, LOW};  // 28 06
-boolean ZOOM_IN_4[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, LOW, LOW, LOW};   // 28 08
-boolean ZOOM_IN_6[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, HIGH, LOW, LOW};  // 28 0C
-boolean ZOOM_IN_7[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, HIGH, HIGH, LOW}; // 28 0E
+boolean ZOOM_IN_2[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,LOW,LOW,HIGH,LOW,LOW};   // 28 04
+boolean ZOOM_IN_3[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,LOW,LOW,HIGH,HIGH,LOW};  // 28 06
+boolean ZOOM_IN_4[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,LOW,HIGH,LOW,LOW,LOW};   // 28 08
+boolean ZOOM_IN_6[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,LOW,HIGH,HIGH,LOW,LOW};  // 28 0C
+boolean ZOOM_IN_7[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,LOW,HIGH,HIGH,HIGH,LOW}; // 28 0E
+boolean ZOOM_OUT_2[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,HIGH,LOW,HIGH,LOW,LOW};   // 28 14
+boolean ZOOM_OUT_3[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,HIGH,LOW,HIGH,HIGH,LOW};  // 28 16
+boolean ZOOM_OUT_4[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW};   // 28 18
+boolean ZOOM_OUT_6[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,HIGH,HIGH,HIGH,LOW,LOW};  // 28 1C
+boolean ZOOM_OUT_7[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,LOW,LOW,HIGH,HIGH,HIGH,HIGH,LOW}; // 28 1E
 
-boolean ZOOM_OUT_2[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, LOW, HIGH, LOW, LOW};   // 28 14
-boolean ZOOM_OUT_3[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, LOW, HIGH, HIGH, LOW};  // 28 16
-boolean ZOOM_OUT_4[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, HIGH, LOW, LOW, LOW};   // 28 18
-boolean ZOOM_OUT_6[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, HIGH, HIGH, LOW, LOW};  // 28 1C
-boolean ZOOM_OUT_7[] = {LOW, LOW, HIGH, LOW, HIGH, LOW, LOW, LOW, LOW, LOW, LOW, HIGH, HIGH, HIGH, HIGH, LOW}; // 28 1E
-
+boolean SEARCHING[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   HIGH,LOW,HIGH,HIGH,LOW,HIGH,HIGH,HIGH};
 
 boolean POWER_OFF[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   LOW,HIGH,LOW,HIGH,HIGH,HIGH,HIGH,LOW}; //18 5E
-boolean POWER_ON[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   LOW,HIGH,LOW,HIGH,HIGH,HIGH,LOW,LOW}; //18 5C  Doesn't work because there's no power supply from the LANC port when the camera is off
-boolean POWER_OFF2[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   LOW,LOW,HIGH,LOW,HIGH,LOW,HIGH,LOW}; //18 2A Turns the XF300 off and then on again
-boolean POWER_SAVE[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   LOW,HIGH,HIGH,LOW,HIGH,HIGH,LOW,LOW}; //18 6C Didn't work
+
+boolean MENU[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   HIGH,LOW,LOW,HIGH,HIGH,LOW,HIGH,LOW};
+boolean MENU_RIGHT[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   HIGH,HIGH,LOW,LOW,LOW,LOW,HIGH,LOW};
+boolean MENU_LEFT[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   HIGH,HIGH,LOW,LOW,LOW,HIGH,LOW,LOW};
+
+boolean MENU_UP[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   HIGH,LOW,LOW,LOW,LOW,HIGH,LOW,LOW};
+boolean MENU_DOWN[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   HIGH,LOW,LOW,LOW,LOW,HIGH,HIGH,LOW};
+
+boolean SET_ENTER[] = {LOW,LOW,LOW,HIGH,HIGH,LOW,LOW,LOW,   HIGH,LOW,HIGH,LOW,LOW,LOW,HIGH,LOW};
+
+boolean WHITE_BALANCE_MENU[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   HIGH,LOW,HIGH,HIGH,LOW,HIGH,LOW,HIGH};
+boolean EXPOSURE_MENU[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   HIGH,LOW,HIGH,HIGH,LOW,HIGH,HIGH,HIGH};
 
 //Focus control. Camera must be switched to manual focus
 boolean FOCUS_NEAR[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,HIGH,LOW,LOW,LOW,HIGH,HIGH,HIGH}; //28 47
@@ -37,6 +48,23 @@ boolean FOCUS_AUTO[] = {LOW,LOW,HIGH,LOW,HIGH,LOW,LOW,LOW,   LOW,HIGH,LOW,LOW,LO
 
 int cmdRepeatCount;
 int bitDuration = 104; // Duration of one LANC bit in microseconds.
+
+void printDeviceAddress() {
+
+  const uint8_t* point = esp_bt_dev_get_address();
+
+  for (int i = 0; i < 6; i++) {
+    char str[3];
+    sprintf(str, "%02X", (int)point[i]);
+    Serial.print(str);
+
+    if (i < 5) {
+      Serial.print(":");
+    }
+  }
+}
+
+
 
 void lancCommand(boolean lancBit[]) {
 
@@ -104,47 +132,108 @@ void setup()
     digitalWrite(cmdPin, LOW);
     delay(5000);
 
+    Serial.print("ESP Board MAC Address:  ");
+    printDeviceAddress();
+
     ArduinoMTI::init();
 }
 
 void indicateBatteryLevel() {
   if (PS4.Battery() >= 3 && ledStatus != 3) {
     PS4.setLed(0, 100, 0);
+    delay(200);
     PS4.sendToController();
     ledStatus = 3;
   } else if (PS4.Battery() == 2 && ledStatus != 2){
     PS4.setLed(100, 79, 2);
+    delay(200);
     PS4.sendToController();
     ledStatus = 2;
-  } else if (PS4.Battery() < 2 && ledStatus > 1){
+  } else if (PS4.Battery() < 2 && ledStatus != 1){
     PS4.setLed(100, 0, 0);
+    delay(200);
     PS4.sendToController();
     ledStatus = 1;
   }
 }
 
+boolean menuContext = false;
+unsigned long lastButtonPressTime = 0;  // Время последнего нажатия кнопки
+const unsigned long debounceDelay = 200; // Задержка для устранения дребезга (в миллисекундах)
+
+
 void loop()
 {
-  if (PS4.PSButton() && PS4.Options()) {
-    Serial.println("PS Button OFF");
-    lancCommand(POWER_OFF);
-    delay(200);
-  } else if (PS4.PSButton()) {
-    Serial.printf("Battery Level : %d\n", PS4.Battery());
-    delay(200);
-  }
-
   if (PS4.isConnected()) {
+    unsigned long currentTime = millis();
+    //  Serial.println(menuContext);
+    if (PS4.L1() && PS4.L2() && PS4.R1() && PS4.R2()) {
+      if (currentTime - lastButtonPressTime > debounceDelay) {
+        menuContext = !menuContext;
+        lastButtonPressTime = currentTime;
+      }
+    }
+
+    if (PS4.Options() && PS4.L1()) {
+      if (currentTime - lastButtonPressTime > debounceDelay) {
+        lancCommand(WHITE_BALANCE_MENU);
+        menuContext = !menuContext;
+        lastButtonPressTime = currentTime;
+      }
+    } else if (PS4.Options() && PS4.L2()) {
+      if (currentTime - lastButtonPressTime > debounceDelay) {
+        lancCommand(EXPOSURE_MENU);
+        menuContext = !menuContext;
+        lastButtonPressTime = currentTime;
+      }
+    } else if (PS4.Options()) {
+      if (currentTime - lastButtonPressTime > debounceDelay) {
+        lancCommand(MENU);
+        menuContext = !menuContext;
+        Serial.println(menuContext);
+        lastButtonPressTime = currentTime;
+      }
+    }
+
+    if (PS4.PSButton() && PS4.Options()) {
+      Serial.println("PS Button OFF");
+      lancCommand(POWER_OFF);
+      delay(200);
+      PS4.end();
+      btStop();
+    } else if (PS4.PSButton()) {
+      Serial.printf("Battery Level : %d\n", PS4.Battery());
+      Serial.printf("ledStatus : %d\n", ledStatus);
+      delay(200);
+    }
+
     indicateBatteryLevel();
 
     if (PS4.Right()) {
-      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::RIGHT);
+      if (menuContext) {
+        lancCommand(MENU_RIGHT);
+      } else {
+        ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::RIGHT);
+      }
     } else if (PS4.Left()) {
-      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::LEFT);
+      if (menuContext) {
+        Serial.println("MENU_LEFT");
+        lancCommand(MENU_LEFT);
+      } else {
+        ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::LEFT);
+      }
     } else if (PS4.Up()) {
-      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::UP);
+      if (menuContext) {
+        lancCommand(MENU_UP);
+      } else {
+        ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::UP);
+      }
     } else if (PS4.Down()) {
-      ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::DOWN);
+      if (menuContext) {
+        lancCommand(MENU_DOWN);
+      } else {
+        ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::DOWN);
+      }
     } else if (PS4.UpLeft()) {
       ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::LEFT);
       ArduinoMTI::processButton(ArduinoMTI::DIRECTIONS::UP);
@@ -166,17 +255,26 @@ void loop()
     }
 
     if (PS4.Cross()) {
-      lancCommand(FOCUS_NEAR);
+      if (menuContext) {
+        lancCommand(SET_ENTER);
+      } else {
+        lancCommand(FOCUS_NEAR);
+      }
     }
 
     if (PS4.Triangle()) {
       lancCommand(FOCUS_AUTO);
     }
+    int stickY = PS4.RStickY();
 
-    if (PS4.RStickY() > 30) {
+    if (stickY >= 12 && stickY <= 126) {
+      lancCommand(ZOOM_IN_3);
+    } else if (stickY > 126){
       lancCommand(ZOOM_IN_7);
     }
-    if (PS4.RStickY() < -30) {
+    if (stickY <= -12 && stickY >= -126 ) {
+      lancCommand(ZOOM_OUT_3);
+    } else if (stickY < -126){
       lancCommand(ZOOM_OUT_7);
     }
   }
