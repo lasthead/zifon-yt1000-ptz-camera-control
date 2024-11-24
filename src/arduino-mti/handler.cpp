@@ -66,47 +66,70 @@ namespace ArduinoMTI {
 
     void processAxis(int8_t posX, int8_t posY) {
         tiltStop = !digitalRead(titlStopSignal);
+        int posYmod = abs(posY);
+        int posXmod = abs(posX);
+        if (posYmod >= 12) {
+            int posYdir = posY > 0 ? 2 : 1;
+            int currentTiltMotor = MOTOR_2_1_CHANNEL;
 
-        if (posY > 20) {
-            if (tiltStop && lastTiltDirection != 1 ) {
-                ledcWrite(MOTOR_2_2_CHANNEL, panTiltSpeedMax);
-                lastTiltDirection = 2;
-            } else if (!tiltStop) {
-                ledcWrite(MOTOR_2_2_CHANNEL, panTiltSpeedMax);
-                lastTiltDirection = 1;
-            } else {
-                ledcWrite(MOTOR_2_2_CHANNEL, 0);
-                lastTiltDirection = 1;
+            int range = 5; 
+            int posYDefault = 3;
+            int reading = map(posYmod, 0, 127, 0, range);
+            int posYspeed = 0;
+            posYspeed = tiltSpeedMin + (panTiltSpeedMax - tiltSpeedMin) / range * reading;
+
+
+            Serial.println(posYspeed);
+
+            if (posYdir == 2 && posYspeed) {
+                if (tiltStop && lastTiltDirection != 1 ) {
+                    ledcWrite(MOTOR_2_2_CHANNEL, posYspeed);
+                    lastTiltDirection = 2;
+                } else if (!tiltStop) {
+                    ledcWrite(MOTOR_2_2_CHANNEL, posYspeed);
+                    lastTiltDirection = 1;
+                } else {
+                    ledcWrite(MOTOR_2_2_CHANNEL, 0);
+                    lastTiltDirection = 1;
+                }
+            }
+
+            if (posYdir == 1 && posYspeed) {
+                if (tiltStop && lastTiltDirection != 2 ) {
+                    ledcWrite(MOTOR_2_1_CHANNEL, posYspeed);
+                    lastTiltDirection = 1;
+                } else if (!tiltStop) {
+                    ledcWrite(MOTOR_2_1_CHANNEL, posYspeed);
+                    lastTiltDirection = 2;
+                } else {
+                    ledcWrite(MOTOR_2_1_CHANNEL, 0);
+                    lastTiltDirection = 2;
+                }
             }
         } else {
             ledcWrite(MOTOR_2_2_CHANNEL, 0);
-        }
-
-        if (posY < -20) {
-            if (tiltStop && lastTiltDirection != 2 ) {
-                ledcWrite(MOTOR_2_1_CHANNEL, panTiltSpeedMax);
-                lastTiltDirection = 1;
-            } else if (!tiltStop) {
-                ledcWrite(MOTOR_2_1_CHANNEL, panTiltSpeedMax);
-                lastTiltDirection = 2;
-            } else {
-                ledcWrite(MOTOR_2_1_CHANNEL, 0);
-                lastTiltDirection = 2;
-            }
-        } else {
             ledcWrite(MOTOR_2_1_CHANNEL, 0);
         }
+        
+        if (posXmod >= 12) {
+            int posXdir = posX > 0 ? 2 : 1;
+            int currentTiltMotor = MOTOR_1_1_CHANNEL;
 
-        if (posX > 20) {
-            ledcWrite(MOTOR_1_1_CHANNEL, panTiltSpeedMax);
-        } else {
-            ledcWrite(MOTOR_1_1_CHANNEL, 0);
-        }
+            int range = 5; 
+            int posXDefault = 3;
+            int reading = map(posXmod, 0, 127, 0, range);
+            int posXspeed = 0;
+            posXspeed = panSpeedMin + (panTiltSpeedMax - panSpeedMin) / range * reading;
 
-        if (posX < -20) {
-            ledcWrite(MOTOR_1_2_CHANNEL, panTiltSpeedMax);
+            if (posXdir == 2 && posXspeed) {
+                ledcWrite(MOTOR_1_1_CHANNEL, posXspeed);
+            }
+            if (posXdir == 1 && posXspeed) {
+                ledcWrite(MOTOR_1_2_CHANNEL, posXspeed);
+            }
         } else {
             ledcWrite(MOTOR_1_2_CHANNEL, 0);
+            ledcWrite(MOTOR_1_1_CHANNEL, 0);
         }
     }   
 }

@@ -9,7 +9,7 @@ namespace ArduinoMTI {
     const int MOTOR_2_1_CHANNEL = 2;
     const int MOTOR_2_2_CHANNEL = 3;
 
-    const int panSpeedMin = 140;
+    const int panSpeedMin = 150;
     const int tiltSpeedMin = 160;
     const int panTiltSpeedMax = 255;
     // int panCurrentSpeed = panSpeedMin;
