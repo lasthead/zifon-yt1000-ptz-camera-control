@@ -19,3 +19,5 @@ https://featherbear.cc/blog/post/zifon-yt-1000-wifi-acu
 http://controlyourcamera.blogspot.com/2011/02/arduino-powered-lanc-remote.html
 
 https://github.com/AlexNe/arduino_lanc_sample/blob/master/LANC-Interface1.png
+
+https://github.com/aed3/PS4-esp32/tree/master
